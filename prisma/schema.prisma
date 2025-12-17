@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// 1. Define a fonte de dados e o provedor.
+// Usaremos PostgreSQL. A URL de conexão virá do arquivo .env.
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 2. Define o gerador do Prisma Client.
+// Isso cria o cliente type-safe que usaremos para interagir com o banco de dados.
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ===============================================
+//               MODELOS DA APLICAÇÃO
+// ===============================================
+
+// Modelo para o Usuário
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  categories Category[]
+  tasks      Task[]
+}
+
+// Modelo para as Categorias de tarefas
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks Task[]
+
+  @@unique([name, userId]) // Garante que um usuário não pode ter duas categorias com o mesmo nome
+}
+
+// Modelo para as Tarefas
+model Task {
+  id          String   @id @default(cuid())
+  description String
+  date        DateTime
+  status      TaskStatus @default(PENDING)
+  userId      String
+  categoryId  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relações
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+}
+
+// Enum para o status da tarefa.
+// Usar um enum torna o código mais legível e menos propenso a erros.
+enum TaskStatus {
+  PENDING
+  COMPLETED
+}

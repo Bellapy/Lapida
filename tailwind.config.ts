@@ -20,21 +20,43 @@ const config = {
     extend: {
       fontFamily: {
         sans: ['var(--font-andika)', 'sans-serif'],
+        // MODIFICATION: Nova família de fontes para títulos
+        heading: ['var(--font-cinzel)', 'serif'],
       },
-
-      /* =========================
-         BASE (OBRIGATÓRIO SHADCN)
-         ========================= */
       colors: {
-        border: '#707070',
-        background: '#1E1E2A',
-        foreground: '#FFFFFF',
-        input: '#F0F0F0',
-        ring: '#C4C4DD',
-
-        /* =========================
-           PALETA DO LÁPIDA (CUSTOM)
-           ========================= */
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
         'os-dark': '#1E1E2A',
         'os-window-bg': '#E8E8F3',
         'os-primary': '#C4C4DD',
@@ -44,13 +66,11 @@ const config = {
         'os-text': '#2D2D2D',
         'os-input-bg': '#F0F0F0',
       },
-
       borderRadius: {
-        lg: '14px',
-        md: '10px',
-        sm: '6px',
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
       },
-
       keyframes: {
         'accordion-down': {
           from: { height: '0' },
@@ -61,7 +81,6 @@ const config = {
           to: { height: '0' },
         },
       },
-
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',

@@ -6,37 +6,27 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useRouter } from 'next/navigation'
 import useSWR, { useSWRConfig } from 'swr'
-import { Star, PlusCircle } from 'lucide-react'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { Star, PlusCircle, Calendar as CalendarIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
-interface Category {
-  id: string
-  name: string
-}
+interface Category { id: string; name: string }
 
 const taskSchema = z.object({
-  description: z.string().min(1, 'Descrição é obrigatória.'),
-  date: z.string().min(1, 'A data é obrigatória.'),
+  title: z.string().min(1, 'O título é obrigatório.'),
+  description: z.string().optional(),
+  date: z.date({ required_error: 'A data é obrigatória.' }),
   categoryId: z.string().optional(),
 })
 
@@ -44,24 +34,19 @@ export function CreateTaskForm() {
   const router = useRouter()
   const { mutate } = useSWRConfig()
   const [newCategoryName, setNewCategoryName] = useState('')
-
-  const { data: categories, mutate: mutateCategories } = useSWR<Category[]>(
-    '/api/categories',
-    fetcher
-  )
+  const { data: categories, mutate: mutateCategories } = useSWR<Category[]>('/api/categories', fetcher)
 
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
-    defaultValues: { description: '', date: '', categoryId: '' },
+    defaultValues: { title: '', description: '', categoryId: 'none' },
   })
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) return
 
-    // Otimista: Adiciona visualmente antes da confirmação da API
     mutateCategories(
-      (currentData) => [
-        ...(currentData || []),
+      (currentData = []) => [
+        ...currentData,
         { id: 'temp-id', name: newCategoryName },
       ],
       false
@@ -74,10 +59,10 @@ export function CreateTaskForm() {
         body: JSON.stringify({ name: newCategoryName }),
       })
       setNewCategoryName('')
-      mutateCategories() // Revalida para obter o ID real e estado do servidor
+      mutateCategories()
     } catch (error) {
       console.error('Failed to create category', error)
-      mutateCategories() // Reverte a UI em caso de erro
+      mutateCategories()
     }
   }
 
@@ -85,8 +70,7 @@ export function CreateTaskForm() {
     try {
       const payload = {
         ...values,
-        date: new Date(values.date).toISOString(),
-        // Garante que não enviamos um ID vazio, mas sim undefined
+        date: values.date.toISOString(),
         categoryId: values.categoryId === 'none' ? undefined : values.categoryId,
       }
       
@@ -112,50 +96,96 @@ export function CreateTaskForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="date"
+          name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="font-semibold">Data:</FormLabel>
+              <FormLabel className="font-semibold">Título:</FormLabel>
               <FormControl>
-                <Input
-                  type="datetime-local"
-                  {...field}
-                  className="rounded-md border-os-border/70 bg-os-input-bg text-os-text placeholder:text-gray-500"
-                />
+                <Input {...field} className="rounded-md border-os-border/70 bg-os-input-bg text-os-text" />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
-          name="categoryId"
+          name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="font-semibold">Categoria:</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger className="rounded-md border-os-border/70 bg-os-input-bg text-os-text">
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                </FormControl>
-                {/* MODIFICATION START - Adicionando classes de estilo ao conteúdo do Select */}
-                <SelectContent className="bg-os-window-bg text-os-text border-os-border">
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  {categories?.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-                {/* MODIFICATION END */}
-              </Select>
+              <FormLabel className="font-semibold">Descrição:</FormLabel>
+              <FormControl>
+                <Textarea {...field} placeholder="(Opcional)" className="min-h-24 rounded-md border-os-border/70 bg-os-input-bg text-os-text" />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col pt-1.5">
+                  <FormLabel className="font-semibold mb-2">Data:</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-full justify-start text-left font-normal rounded-md border-os-border/70 bg-os-input-bg text-os-text hover:bg-os-input-bg',
+                            !field.value && 'text-gray-500'
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {field.value ? (
+                            format(field.value, 'PPP', { locale: ptBR })
+                          ) : (
+                            <span>Escolha uma data</span>
+                          )}
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-semibold">Categoria:</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="rounded-md border-os-border/70 bg-os-input-bg text-os-text">
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-os-window-bg text-os-text border-os-border">
+                      <SelectItem value="none">Nenhuma</SelectItem>
+                      {categories?.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+        </div>
+        
         <div className="flex items-center gap-2">
           <Input
             value={newCategoryName}
@@ -166,7 +196,7 @@ export function CreateTaskForm() {
                 handleCreateCategory();
               }
             }}
-            placeholder="Ou crie uma nova categoria"
+            placeholder="Ou crie uma nova categoria..."
             className="rounded-md border-os-border/70 bg-os-input-bg text-os-text placeholder:text-gray-500"
           />
           <Button
@@ -179,34 +209,12 @@ export function CreateTaskForm() {
           </Button>
         </div>
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="font-semibold">Descrição:</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="..."
-                  {...field}
-                  className="min-h-32 rounded-md border-os-border/70 bg-os-input-bg text-os-text placeholder:text-gray-500"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <div className="flex justify-center pt-4">
-          <Button
-            type="submit"
-            className="flex items-center gap-2 rounded-lg border-2 border-os-border bg-os-primary px-8 py-6 text-lg font-bold text-os-text shadow-md hover:bg-os-primary-hover"
-            disabled={form.formState.isSubmitting}
-          >
-            <Star size={20} />
-            {form.formState.isSubmitting ? 'CRIANDO...' : 'CRIAR'}
-            <Star size={20} />
-          </Button>
+            <Button type="submit" disabled={form.formState.isSubmitting} className="flex items-center gap-2 rounded-lg border-2 border-os-border bg-os-primary px-8 py-6 text-lg font-bold text-os-text shadow-md hover:bg-os-primary-hover">
+                <Star size={20} />
+                {form.formState.isSubmitting ? 'CRIANDO...' : 'CRIAR'}
+                <Star size={20} />
+            </Button>
         </div>
       </form>
     </Form>

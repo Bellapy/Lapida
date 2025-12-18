@@ -1,24 +1,19 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-// Schema Zod para a criação de uma nova tarefa, agora com categoryId
 const createTaskSchema = z.object({
-  description: z
-    .string()
-    .min(1, 'A descrição não pode estar vazia.')
-    .max(200, 'A descrição deve ter no máximo 200 caracteres.'),
+  title: z.string().min(1, 'O título é obrigatório.'),
+  description: z.string().optional(),
   date: z.coerce.date({
     required_error: 'A data é obrigatória.',
     invalid_type_error: 'Formato de data inválido.',
   }),
-  categoryId: z.string().optional(), // categoryId é uma string opcional
+  categoryId: z.string().optional(),
 })
 
-// Handler para buscar as tarefas (GET)
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
@@ -26,15 +21,9 @@ export async function GET() {
     }
 
     const tasks = await db.task.findMany({
-      where: { 
-        userId: session.user.id 
-      },
-      orderBy: {
-        date: 'asc', // Ordena as tarefas pela data
-      },
-      include: {
-        category: true, // Inclui os dados da categoria relacionada na resposta
-      },
+      where: { userId: session.user.id },
+      orderBy: { date: 'asc' },
+      include: { category: true },
     })
 
     return NextResponse.json(tasks)
@@ -44,7 +33,6 @@ export async function GET() {
   }
 }
 
-// Handler para criar uma nova tarefa (POST)
 export async function POST(req: Request) {
   try {
     const session = await auth()
@@ -61,28 +49,27 @@ export async function POST(req: Request) {
       })
     }
     
-    const { description, date, categoryId } = validation.data
+    const { title, description, date, categoryId } = validation.data
 
-    // Se um categoryId foi fornecido, verifica se ele pertence ao usuário
     if (categoryId) {
       const categoryExists = await db.category.findFirst({
         where: {
           id: categoryId,
           userId: session.user.id,
         },
-      });
+      })
       if (!categoryExists) {
-        return new NextResponse('Categoria inválida ou não pertence a este usuário', { status: 403 });
+        return new NextResponse('Categoria inválida.', { status: 403 })
       }
     }
 
     const task = await db.task.create({
       data: {
         userId: session.user.id,
+        title,
         description,
         date,
-        // Conecta à categoria se o ID for fornecido e válido
-        categoryId: categoryId,
+        categoryId,
       },
     })
 

@@ -6,7 +6,8 @@ import { Trash2, Edit, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/utils'
-import type { Task } from './task-list' // Importando o tipo compartilhado
+import { Task } from './task-list'
+import Link from 'next/link'
 
 interface TaskItemProps {
   task: Task
@@ -15,6 +16,7 @@ interface TaskItemProps {
 export function TaskItem({ task }: TaskItemProps) {
   const { mutate } = useSWRConfig()
 
+  // Função para deletar a tarefa com atualização otimista
   const handleDelete = async () => {
     mutate(
       '/api/tasks',
@@ -26,6 +28,7 @@ export function TaskItem({ task }: TaskItemProps) {
     mutate('/api/tasks')
   }
 
+  // Função para alternar o status da tarefa com atualização otimista
   const handleToggleStatus = async () => {
     const newStatus: Task['status'] =
       task.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED'
@@ -49,7 +52,7 @@ export function TaskItem({ task }: TaskItemProps) {
   const isCompleted = task.status === 'COMPLETED'
   const startTime = format(new Date(task.date), 'HH:mm')
   const endTime = format(
-    new Date(new Date(task.date).getTime() + 30 * 60000),
+    new Date(new Date(task.date).getTime() + 30 * 60000), // Exemplo: duração de 30min
     'HH:mm'
   )
   const displayTime = `${startTime} - ${endTime}`
@@ -77,11 +80,21 @@ export function TaskItem({ task }: TaskItemProps) {
               isCompleted && 'line-through text-os-text/70'
             )}
           >
-            {task.description}
+            {task.title}
           </p>
         </div>
+        {task.description && (
+          <p
+            className={cn(
+              'pl-[5.5rem] text-sm text-os-text/70',
+              isCompleted && 'line-through'
+            )}
+          >
+            {task.description}
+          </p>
+        )}
         {task.category && (
-          <span className="ml-1 text-xs font-semibold uppercase tracking-wider text-os-text/60 bg-os-window-bg px-2 py-0.5 rounded-full">
+          <span className="ml-1 mt-1 rounded-full bg-os-window-bg px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-os-text/60">
             {task.category.name}
           </span>
         )}
@@ -97,11 +110,14 @@ export function TaskItem({ task }: TaskItemProps) {
           <Trash2 size={18} />
         </Button>
         <Button
+          asChild
           variant="ghost"
           size="icon"
           className="h-8 w-8 text-os-text hover:bg-black/10 hover:text-blue-500"
         >
-          <Edit size={18} />
+          <Link href={`/dashboard/edit/${task.id}`}>
+            <Edit size={18} />
+          </Link>
         </Button>
         <Button
           onClick={handleToggleStatus}

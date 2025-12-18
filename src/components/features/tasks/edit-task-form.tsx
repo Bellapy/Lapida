@@ -9,7 +9,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Calendar as CalendarIcon, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Task as TaskWithCategory } from '@prisma/client'
+import { Task as PrismaTask } from '@prisma/client'
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -31,7 +31,7 @@ const editTaskSchema = z.object({
 })
 
 interface EditTaskFormProps {
-  task: TaskWithCategory & { category: Category | null }
+  task: PrismaTask & { category: Category | null }
 }
 
 export function EditTaskForm({ task }: EditTaskFormProps) {
@@ -101,78 +101,80 @@ export function EditTaskForm({ task }: EditTaskFormProps) {
           )}
         />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col pt-1.5">
-                  <FormLabel className="font-semibold mb-2">Data:</FormLabel>
-                  {/* MODIFICATION START - Adicionando a prop modal={true} */}
-                  <Popover modal={true}>
-                  {/* MODIFICATION END */}
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={'outline'}
-                          className={cn(
-                            'w-full justify-start text-left font-normal rounded-md border-os-border/70 bg-os-input-bg text-os-text hover:bg-os-input-bg',
-                            !field.value && 'text-gray-500'
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? (
-                            format(field.value, 'PPP', { locale: ptBR })
-                          ) : (
-                            <span>Escolha uma data</span>
-                          )}
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold">Categoria:</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || 'none'}>
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col pt-1.5">
+                <FormLabel className="font-semibold mb-2">Data:</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
                     <FormControl>
-                      <SelectTrigger className="bg-os-input-bg border-os-border/70">
-                        <SelectValue placeholder="Selecione uma categoria" />
-                      </SelectTrigger>
+                      <Button
+                        variant={'outline'}
+                        className={cn(
+                          'w-full justify-start text-left font-normal rounded-md border-os-border/70 bg-os-input-bg text-os-text hover:bg-os-input-bg',
+                          !field.value && 'text-gray-500'
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {field.value ? (
+                          format(field.value, 'PPP', { locale: ptBR })
+                        ) : (
+                          <span>Escolha uma data</span>
+                        )}
+                      </Button>
                     </FormControl>
-                    <SelectContent className="bg-os-window-bg text-os-text border-os-border">
-                      <SelectItem value="none">Nenhuma</SelectItem>
-                      {categories?.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="categoryId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="font-semibold">Categoria:</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || 'none'}>
+                  <FormControl>
+                    <SelectTrigger className="bg-os-input-bg border-os-border/70">
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="bg-os-window-bg text-os-text border-os-border">
+                    <SelectItem value="none">Nenhuma</SelectItem>
+                    {categories?.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
         <div className="flex justify-center pt-4">
-            <Button type="submit" disabled={form.formState.isSubmitting} className="flex items-center gap-2 rounded-lg border-2 border-os-border bg-os-primary px-8 py-6 text-lg font-bold text-os-text shadow-md hover:bg-os-primary-hover">
-                <Star size={20} />
-                {form.formState.isSubmitting ? 'SALVANDO...' : 'SALVAR'}
-                <Star size={20} />
-            </Button>
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            className="flex items-center gap-2 rounded-lg border-2 border-os-border bg-os-primary px-8 py-6 text-lg font-bold text-os-text shadow-md hover:bg-os-primary-hover"
+          >
+            <Star size={20} />
+            {form.formState.isSubmitting ? 'SALVANDO...' : 'SALVAR'}
+            <Star size={20} />
+          </Button>
         </div>
       </form>
     </Form>

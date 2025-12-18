@@ -34,7 +34,6 @@ interface Category {
   name: string
 }
 
-
 const taskSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória.'),
   date: z.string().min(1, 'A data é obrigatória.'),
@@ -46,7 +45,6 @@ export function CreateTaskForm() {
   const { mutate } = useSWRConfig()
   const [newCategoryName, setNewCategoryName] = useState('')
 
-  // Buscar categorias existentes
   const { data: categories, mutate: mutateCategories } = useSWR<Category[]>(
     '/api/categories',
     fetcher
@@ -60,30 +58,42 @@ export function CreateTaskForm() {
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) return
 
-    // Atualização otimista para categorias
+    // Otimista: Adiciona visualmente antes da confirmação da API
     mutateCategories(
-      [...(categories || []), { id: 'temp-id', name: newCategoryName }],
+      (currentData) => [
+        ...(currentData || []),
+        { id: 'temp-id', name: newCategoryName },
+      ],
       false
     )
 
-    await fetch('/api/categories', {
-      method: 'POST',
-      body: JSON.stringify({ name: newCategoryName }),
-    })
-    
-    setNewCategoryName('')
-    mutateCategories() // Revalida para obter o ID real
+    try {
+      await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCategoryName }),
+      })
+      setNewCategoryName('')
+      mutateCategories() // Revalida para obter o ID real e estado do servidor
+    } catch (error) {
+      console.error('Failed to create category', error)
+      mutateCategories() // Reverte a UI em caso de erro
+    }
   }
 
   async function onSubmit(values: z.infer<typeof taskSchema>) {
     try {
+      const payload = {
+        ...values,
+        date: new Date(values.date).toISOString(),
+        // Garante que não enviamos um ID vazio, mas sim undefined
+        categoryId: values.categoryId === 'none' ? undefined : values.categoryId,
+      }
+      
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...values,
-          date: new Date(values.date).toISOString(),
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) throw new Error('Falha ao criar tarefa')
@@ -130,7 +140,8 @@ export function CreateTaskForm() {
                     <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                {/* MODIFICATION START - Adicionando classes de estilo ao conteúdo do Select */}
+                <SelectContent className="bg-os-window-bg text-os-text border-os-border">
                   <SelectItem value="none">Nenhuma</SelectItem>
                   {categories?.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
@@ -138,25 +149,33 @@ export function CreateTaskForm() {
                     </SelectItem>
                   ))}
                 </SelectContent>
+                {/* MODIFICATION END */}
               </Select>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <div className="flex items-center gap-2">
           <Input
             value={newCategoryName}
             onChange={(e) => setNewCategoryName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleCreateCategory();
+              }
+            }}
             placeholder="Ou crie uma nova categoria"
             className="rounded-md border-os-border/70 bg-os-input-bg text-os-text placeholder:text-gray-500"
           />
           <Button
             type="button"
             onClick={handleCreateCategory}
-            className="bg-os-primary text-os-text hover:bg-os-primary-hover"
+            size="icon"
+            className="bg-os-primary text-os-text hover:bg-os-primary-hover flex-shrink-0"
           >
-            <PlusCircle size={18} />
+            <PlusCircle size={20} />
           </Button>
         </div>
 

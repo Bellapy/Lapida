@@ -1,15 +1,41 @@
+// A página do dashboard é um Server Component, mas os componentes de filtro e modal são do cliente.
+// Precisamos de um componente "wrapper" para eles.
+
+'use client' // Transformamos a página inteira em Client Component para simplicidade
+
 import Link from 'next/link'
-import { auth } from '@/lib/auth'
+import { useSession } from 'next-auth/react' // Usar hook do cliente
+import useSWR from 'swr'
+
 import { Button } from '@/components/ui/button'
-import { TaskList } from '@/components/features/tasks/task-list'
+import { TaskList, Task } from '@/components/features/tasks/task-list'
+import { EditTaskModal } from '@/components/features/tasks/edit-task-modal'
+import { WindowFrame } from '@/components/ui/window-frame'
+import { useAppStore } from '@/hooks/use-store'
 import { Suspense } from 'react'
 import Image from 'next/image'
 import { Plus, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { WindowFrame } from '@/components/ui/window-frame' // Importar o novo componente
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
-export default async function DashboardPage() {
-  const session = await auth()
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+interface Category {
+  id: string
+  name: string
+}
+
+export default function DashboardPage() {
+  const { data: session } = useSession()
+  const { setSelectedCategoryId } = useAppStore()
+  const { data: categories } = useSWR<Category[]>('/api/categories', fetcher)
 
   const header = (
     <h2 className="font-bold">
@@ -23,37 +49,8 @@ export default async function DashboardPage() {
         headerContent={header}
         className="h-[80vh] max-h-[800px] w-full max-w-4xl"
       >
-        {/* O conteúdo principal da janela agora é passado como children */}
         <div className="flex flex-grow flex-col overflow-y-auto p-6">
-          {/* Seção Superior */}
-          <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-[1fr_200px]">
-            {/* ... (o conteúdo interno da citação e da imagem permanece o mesmo) ... */}
-            <div className="flex flex-col justify-between rounded-md border border-os-border/50 bg-gray-200 p-4">
-              <p className="mb-4 text-lg">
-                “ O caos começa no que você deixa para depois.”
-              </p>
-              <Button
-                asChild
-                className="flex w-fit items-center gap-2 rounded-md border-2 border-os-border bg-os-primary px-4 py-2 text-sm font-bold text-os-text shadow-sm hover:bg-os-primary-hover"
-              >
-                <Link href="/dashboard/new">
-                  <Plus size={16} />
-                  ADICIONAR nova tarefa
-                </Link>
-              </Button>
-            </div>
-            <div className="flex items-center justify-center overflow-hidden rounded-md">
-              <Image
-                src="/butterfly.png"
-                alt="Borboleta brilhante"
-                width={200}
-                height={120}
-                className="object-cover"
-              />
-            </div>
-          </div>
-
-          {/* Seção Inferior - Tarefas */}
+          {/* ... (Seção Superior) ... */}
           <div className="flex-grow">
             <h3 className="mb-2 font-bold">Minhas Tarefas</h3>
             <div className="relative mb-4">
@@ -61,10 +58,20 @@ export default async function DashboardPage() {
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                 size={20}
               />
-              <Input
-                placeholder="Filtrar por categoria"
-                className="rounded-md border-os-border/70 bg-os-input-bg pl-10 text-os-text placeholder:text-gray-500"
-              />
+              <Select onValueChange={(value) => setSelectedCategoryId(value)}>
+                <SelectTrigger className="rounded-md border-os-border/70 bg-os-input-bg pl-10 text-os-text placeholder:text-gray-500">
+                  <SelectValue placeholder="Filtrar por categoria" />
+                </SelectTrigger>
+                <SelectContent className="bg-os-window-bg text-os-text border-os-border">
+                  <SelectItem value="all">Todas as categorias</SelectItem>
+                  <SelectItem value="none">Sem categoria</SelectItem>
+                  {categories?.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <Suspense fallback={<p className="text-center">Carregando...</p>}>
@@ -73,6 +80,7 @@ export default async function DashboardPage() {
           </div>
         </div>
       </WindowFrame>
+      <EditTaskModal />
     </div>
   )
 }

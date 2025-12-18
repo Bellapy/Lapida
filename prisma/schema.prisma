@@ -1,18 +1,17 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// MODIFICATION START
-// A configuração da URL foi removida, como na versão anterior.
-// Esta é a estrutura correta para o Prisma v7+.
 datasource db {
   provider = "postgresql"
+  // MODIFICATION START
+  // Adicionado de volta para compatibilidade com a CLI do Prisma v5.17.0
+  url      = env("DATABASE_URL")
+  // MODIFICATION END
 }
 
 generator client {
   provider = "prisma-client-js"
 }
-// MODIFICATION END
-
 
 // ===============================================
 //               MODELOS DA APLICAÇÃO

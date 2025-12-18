@@ -1,45 +1,53 @@
-import NextAuth from "next-auth"
-import Credentials from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
-import { db } from "@/lib/db"
+import NextAuth from 'next-auth'
+import Credentials from 'next-auth/providers/credentials'
+import bcrypt from 'bcryptjs'
+import { db } from '@/lib/db'
+import { z } from 'zod'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
+        const parsedCredentials = z
+          .object({ email: z.string().email(), password: z.string() })
+          .safeParse(credentials)
 
-        // Busca o usuário no banco
-        const user = await db.user.findUnique({
-          where: { email: credentials.email as string },
-        })
-
-        // Se não existir usuário ou não tiver senha (usuários OAuth)
-        if (!user || !user.password) return null
-
-        // Verifica se a senha bate usando bcrypt
-        const isPasswordCorrect = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        )
-
-        if (!isPasswordCorrect) return null
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
+        if (!parsedCredentials.success) {
+          return null
         }
+
+        const { email, password } = parsedCredentials.data
+
+        const user = await db.user.findUnique({ where: { email } })
+        if (!user || !user.password) {
+          return null
+        }
+
+        const passwordsMatch = await bcrypt.compare(password, user.password)
+        if (passwordsMatch) {
+          return user
+        }
+
+        return null
       },
     }),
   ],
   pages: {
-    signIn: "/login", // Define nossa página customizada de login
+    signIn: '/login',
   },
-  session: { strategy: "jwt" }, // Usaremos tokens JWT para a sessão
+  session: { strategy: 'jwt' },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string
+      }
+      return session
+    },
+  },
 })

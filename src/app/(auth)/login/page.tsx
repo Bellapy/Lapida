@@ -1,3 +1,7 @@
+// MODIFICATION START
+'use client'
+// MODIFICATION END
+
 import { LoginForm } from '@/components/features/auth/login-form'
 import Link from 'next/link'
 
@@ -8,7 +12,10 @@ export default function LoginPage() {
         <h1 className="text-center text-2xl font-bold text-white">Entrar no Lápida</h1>
         <LoginForm />
         <p className="text-center text-sm text-gray-400">
-          Não tem uma conta? <Link href="/register" className="text-blue-400 hover:underline">Cadastre-se</Link>
+          Não tem uma conta?{' '}
+          <Link href="/register" className="text-blue-400 hover:underline">
+            Cadastre-se
+          </Link>
         </p>
       </div>
     </div>

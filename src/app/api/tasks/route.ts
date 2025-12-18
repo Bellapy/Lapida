@@ -4,13 +4,18 @@ import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-// Schema Zod para a criação de uma nova tarefa
+// Schema Zod para a criação de uma nova tarefa com validação de data corrigida
 const createTaskSchema = z.object({
   description: z
     .string()
     .min(1, 'A descrição não pode estar vazia.')
     .max(200, 'A descrição deve ter no máximo 200 caracteres.'),
-  date: z.string().datetime(), // Esperamos a data no formato ISO 8601 string
+  date: z.coerce
+    .date() // z.coerce.date tenta converter string para Date
+    .refine(
+      (date) => !isNaN(date.getTime()),
+      'A data é obrigatória.'
+    ),
 })
 
 // Handler para buscar as tarefas (GET)
@@ -34,7 +39,7 @@ export async function GET() {
     return NextResponse.json(tasks)
   } catch (error) {
     console.error('[TASKS_GET_ERROR]', error)
-    return new NextResponse('Erro interno do servidor', { status: 500 })
+    return new NextResponse('Erro Interno do Servidor', { status: 500 })
   }
 }
 
@@ -48,24 +53,31 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { description, date } = createTaskSchema.parse(body)
+    
+    // Usar safeParse para um tratamento de erro mais seguro
+    const validation = createTaskSchema.safeParse(body)
+
+    if (!validation.success) {
+      // Retorna os erros de forma estruturada para o frontend
+      return NextResponse.json(validation.error.flatten().fieldErrors, {
+        status: 400,
+      })
+    }
+    
+    const { description, date } = validation.data
 
     const task = await db.task.create({
       data: {
         userId: session.user.id,
         description,
-        date: new Date(date), // Converte a string de data para um objeto Date
+        date, // A data já é um objeto Date graças ao z.coerce.date
       },
     })
 
     return NextResponse.json(task, { status: 201 })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return new NextResponse(JSON.stringify(error.flatten().fieldErrors), {
-        status: 400,
-      })
-    }
+    // Este catch agora lida com erros inesperados do servidor ou do banco de dados
     console.error('[TASKS_POST_ERROR]', error)
-    return new NextResponse('Erro interno do servidor', { status: 500 })
+    return new NextResponse('Erro Interno do Servidor', { status: 500 })
   }
 }

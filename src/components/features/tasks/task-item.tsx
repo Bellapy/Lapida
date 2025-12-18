@@ -6,13 +6,7 @@ import { Trash2, Edit, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/utils'
-
-interface Task {
-  id: string
-  description: string
-  date: string
-  status: 'PENDING' | 'COMPLETED'
-}
+import type { Task } from './task-list' // Importando o tipo compartilhado
 
 interface TaskItemProps {
   task: Task
@@ -64,31 +58,35 @@ export function TaskItem({ task }: TaskItemProps) {
     <div
       className={cn(
         'flex items-center justify-between rounded-md border-2 border-os-border bg-os-primary p-3 text-os-text transition-colors',
-        // MODIFICATION START - Aplicando um fundo mais escuro e opacidade seletiva
-        isCompleted && 'bg-os-primary/50' // Usamos a opacidade na cor para escurecer
-        // MODIFICATION END
+        isCompleted && 'bg-os-primary/50'
       )}
     >
-      <div className="flex items-center gap-4">
-        {/* MODIFICATION START - Muted text color for completed tasks */}
-        <span
-          className={cn(
-            'text-sm font-semibold',
-            isCompleted && 'text-os-text/70'
-          )}
-        >
-          {displayTime}
-        </span>
-        <p
-          className={cn(
-            'font-semibold',
-            isCompleted && 'line-through text-os-text/70'
-          )}
-        >
-          {task.description}
-        </p>
-        {/* MODIFICATION END */}
+      <div className="flex flex-col items-start gap-1">
+        <div className="flex items-center gap-4">
+          <span
+            className={cn(
+              'text-sm font-semibold',
+              isCompleted && 'text-os-text/70'
+            )}
+          >
+            {displayTime}
+          </span>
+          <p
+            className={cn(
+              'font-semibold',
+              isCompleted && 'line-through text-os-text/70'
+            )}
+          >
+            {task.description}
+          </p>
+        </div>
+        {task.category && (
+          <span className="ml-1 text-xs font-semibold uppercase tracking-wider text-os-text/60 bg-os-window-bg px-2 py-0.5 rounded-full">
+            {task.category.name}
+          </span>
+        )}
       </div>
+
       <div className="flex items-center gap-1">
         <Button
           onClick={handleDelete}

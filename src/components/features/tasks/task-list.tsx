@@ -1,13 +1,19 @@
 'use client'
 
 import useSWR from 'swr'
-import { TaskItem } from './task-item' // Importar o novo componente
+import { TaskItem } from './task-item'
 
-interface Task {
+interface Category {
+  id: string
+  name: string
+}
+
+export interface Task {
   id: string
   description: string
   date: string
   status: 'PENDING' | 'COMPLETED'
+  category: Category | null
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -15,8 +21,12 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json())
 export function TaskList() {
   const { data: tasks, error, isLoading } = useSWR<Task[]>('/api/tasks', fetcher)
 
-  if (isLoading) return <div className="p-4 text-center">Carregando tarefas...</div>
-  if (error) return <div className="p-4 text-center text-red-500">Falha ao carregar as tarefas.</div>
+  if (isLoading) {
+    return <div className="p-4 text-center text-gray-500">Carregando tarefas...</div>
+  }
+  if (error) {
+    return <div className="p-4 text-center text-red-500">Falha ao carregar as tarefas.</div>
+  }
   if (!tasks || tasks.length === 0) {
     return <p className="p-4 text-center text-gray-500">Você ainda não tem tarefas. Que tal adicionar uma?</p>
   }

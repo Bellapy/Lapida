@@ -28,19 +28,13 @@ export function TaskItem({ task }: TaskItemProps) {
         currentTasks?.filter((t) => t.id !== task.id) || [],
       false
     )
-
-    await fetch(`/api/tasks/${task.id}`, {
-      method: 'DELETE',
-    })
-
+    await fetch(`/api/tasks/${task.id}`, { method: 'DELETE' })
     mutate('/api/tasks')
   }
 
   const handleToggleStatus = async () => {
-    // MODIFICATION START - Adicionamos a tipagem explícita aqui
     const newStatus: Task['status'] =
       task.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED'
-    // MODIFICATION END
 
     mutate(
       '/api/tasks',
@@ -50,18 +44,15 @@ export function TaskItem({ task }: TaskItemProps) {
         ) || [],
       false
     )
-
     await fetch(`/api/tasks/${task.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     })
-
     mutate('/api/tasks')
   }
 
   const isCompleted = task.status === 'COMPLETED'
-
   const startTime = format(new Date(task.date), 'HH:mm')
   const endTime = format(
     new Date(new Date(task.date).getTime() + 30 * 60000),
@@ -72,15 +63,31 @@ export function TaskItem({ task }: TaskItemProps) {
   return (
     <div
       className={cn(
-        'flex items-center justify-between rounded-md border-2 border-os-border bg-os-primary p-3 text-os-text transition-opacity',
-        isCompleted && 'opacity-50'
+        'flex items-center justify-between rounded-md border-2 border-os-border bg-os-primary p-3 text-os-text transition-colors',
+        // MODIFICATION START - Aplicando um fundo mais escuro e opacidade seletiva
+        isCompleted && 'bg-os-primary/50' // Usamos a opacidade na cor para escurecer
+        // MODIFICATION END
       )}
     >
       <div className="flex items-center gap-4">
-        <span className="text-sm font-semibold">{displayTime}</span>
-        <p className={cn('font-semibold', isCompleted && 'line-through')}>
+        {/* MODIFICATION START - Muted text color for completed tasks */}
+        <span
+          className={cn(
+            'text-sm font-semibold',
+            isCompleted && 'text-os-text/70'
+          )}
+        >
+          {displayTime}
+        </span>
+        <p
+          className={cn(
+            'font-semibold',
+            isCompleted && 'line-through text-os-text/70'
+          )}
+        >
           {task.description}
         </p>
+        {/* MODIFICATION END */}
       </div>
       <div className="flex items-center gap-1">
         <Button
@@ -106,7 +113,7 @@ export function TaskItem({ task }: TaskItemProps) {
         >
           <Star
             size={18}
-            className={cn(isCompleted && 'fill-yellow-400 text-yellow-400')}
+            className={cn(isCompleted && 'fill-current text-yellow-500/70')}
           />
         </Button>
         <div className="ml-2 flex items-center gap-1">

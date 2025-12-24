@@ -1,6 +1,4 @@
-<div align="center">
-  <img src="//public/lp.png" alt="Lápida Landing Page" width="100%"/>
-</div>
+
 
 <h1 align="center">Lápida 🦋</h1>
 
@@ -35,21 +33,46 @@ A aplicação está disponível para acesso e teste em tempo real. Visite o link
 
 <table>
   <tr>
-    <td align="center"><strong>Dashboard Principal</strong><br><em>Visão geral das suas tarefas.</em></td>
-    <td align="center"><strong>Criação de Tarefa</strong><br><em>Adicione novas tarefas de forma simples.</em></td>
+    <td align="center">
+      <strong>Dashboard Principal</strong><br>
+      <em>Visão geral das suas tarefas.</em>
+    </td>
+    <td align="center">
+      <strong>Criação de Tarefa</strong><br>
+      <em>Adicione novas tarefas de forma simples.</em>
+    </td>
   </tr>
+
   <tr>
-    <td><img src="//public/Captura de tela 2025-12-23 192907.png" alt="Dashboard do Lápida" /></td>
-    <td><img src="//public/criar.png" alt="Página de criação de tarefa" /></td>
+    <td>
+      <img src="public/inicio.png" alt="Dashboard do Lápida" />
+    </td>
+    <td>
+      <img src="public/criar.png" alt="Página de criação de tarefa" />
+    </td>
   </tr>
+
   <tr>
-    <td align="center"><strong>Edição de Tarefa</strong><br><em>Ajuste os detalhes quando precisar.</em></td>
-     <td align="center"><strong>Landing Page</strong><br><em>A porta de entrada para a transformação.</em></td>
+    <td align="center">
+      <strong>Edição de Tarefa</strong><br>
+      <em>Ajuste os detalhes quando precisar.</em>
+    </td>
+    <td align="center">
+      <strong>Landing Page</strong><br>
+      <em>A porta de entrada para a transformação.</em>
+    </td>
   </tr>
+
   <tr>
-    <td><img src="//public/editar.png" alt="Página de edição de tarefa" /></td>
+    <td>
+      <img src="public/editar.png" alt="Página de edição de tarefa" />
+    </td>
+    <td>
+      <img src="public/lp.png" alt="Landing Page do Lápida" />
+    </td>
   </tr>
 </table>
+
 
 ---
 
